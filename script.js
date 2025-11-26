@@ -6,52 +6,17 @@ const images = [
   { src: 'raw5.jpg', title: 'Raw asset 5' },
 ];
 
+const palette = ['#38bdf8', '#a855f7', '#fb7185', '#f97316', '#4ade80'];
+
 const overlay = document.getElementById('overlay');
 const imageList = document.getElementById('imageList');
 const mainImage = document.getElementById('mainImage');
 const activeTitle = document.getElementById('activeTitle');
 const clearButton = document.getElementById('clearButton');
-const borderSlider = document.getElementById('borderSlider');
-const borderValue = document.getElementById('borderValue');
-const lineSlider = document.getElementById('lineSlider');
-const lineValue = document.getElementById('lineValue');
-const textSizeSlider = document.getElementById('textSizeSlider');
-const textSizeValue = document.getElementById('textSizeValue');
-const opacitySlider = document.getElementById('opacitySlider');
-const opacityValue = document.getElementById('opacityValue');
-const colorPickerPrimary = document.getElementById('colorPickerPrimary');
-const colorPickerSecondary = document.getElementById('colorPickerSecondary');
 
 let currentIndex = 0;
+let colorIndex = 0;
 const annotationSets = new Map();
-const defaultAnnotations = new Map([
-  [
-    'raw1.jpg',
-    [
-      {
-        x: 0.34,
-        y: 0.42,
-        direction: 'up',
-        text: 'Modern Frameless Wall Mirror – 24x36 inch\n$129.99\nBrightHome Interiors',
-      },
-      {
-        x: 0.69,
-        y: 0.56,
-        direction: 'down',
-        text: 'Classic 36-inch Single Sink Vanity with Marble Top\n$749.00\nUrbanBath & Co.',
-      },
-    ],
-  ],
-]);
-
-const settings = {
-  borderThickness: 2.5,
-  lineThickness: 2,
-  textSize: 14,
-  boxOpacity: 0.22,
-  markerColor: '#38bdf8',
-  fillColor: '#a855f7',
-};
 
 function makeId() {
   if (crypto.randomUUID) return crypto.randomUUID();
@@ -67,24 +32,10 @@ function colorWithAlpha(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function autoResizeTextarea(textarea) {
-  textarea.style.height = 'auto';
-  textarea.style.height = `${textarea.scrollHeight}px`;
-}
-
 function getCurrentAnnotations() {
   const key = images[currentIndex].src;
   if (!annotationSets.has(key)) {
-    const defaults = defaultAnnotations.get(key) || [];
-    annotationSets.set(
-      key,
-      defaults.map((item) => ({
-        id: makeId(),
-        color: settings.markerColor,
-        fillColor: settings.fillColor,
-        ...item,
-      })),
-    );
+    annotationSets.set(key, []);
   }
   return annotationSets.get(key);
 }
@@ -126,6 +77,12 @@ function buildImageList() {
   });
 }
 
+function nextColor() {
+  const color = palette[colorIndex % palette.length];
+  colorIndex += 1;
+  return color;
+}
+
 function addAnnotation(x, y) {
   const direction = y > 0.55 ? 'up' : 'down';
   const annotations = getCurrentAnnotations();
@@ -135,8 +92,7 @@ function addAnnotation(x, y) {
     y,
     direction,
     text: 'Annotation',
-    color: settings.markerColor,
-    fillColor: settings.fillColor,
+    color: nextColor(),
   });
   renderAnnotations();
 }
@@ -181,20 +137,17 @@ function renderAnnotations() {
   const lineLength = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-length'), 10);
   const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'), 10);
 
-  document.documentElement.style.setProperty('--dot-border', `${settings.borderThickness}px`);
-
   annotations.forEach((annotation) => {
     const xPx = annotation.x * rect.width;
     const yPx = annotation.y * rect.height;
-    const fillColor = annotation.fillColor || annotation.color;
-    const bgTint = colorWithAlpha(fillColor, settings.boxOpacity);
+    const bgTint = colorWithAlpha(annotation.color, 0.16);
 
     const dot = document.createElement('div');
     dot.className = 'dot';
     dot.style.left = `${xPx}px`;
     dot.style.top = `${yPx}px`;
     dot.style.backgroundColor = annotation.color;
-    dot.style.borderColor = colorWithAlpha(annotation.color, 0.38);
+    dot.style.borderColor = colorWithAlpha(annotation.color, 0.3);
     dot.style.pointerEvents = 'none';
 
     const line = document.createElement('div');
@@ -202,7 +155,6 @@ function renderAnnotations() {
     line.style.left = `${xPx}px`;
     line.style.backgroundColor = annotation.color;
     line.style.height = `${lineLength}px`;
-    line.style.width = `${settings.lineThickness}px`;
     line.style.pointerEvents = 'none';
 
     const label = document.createElement('div');
@@ -210,19 +162,13 @@ function renderAnnotations() {
     label.style.left = `${xPx}px`;
     label.style.color = annotation.color;
     label.style.background = bgTint;
-    label.style.borderColor = colorWithAlpha(fillColor, Math.min(settings.boxOpacity + 0.15, 0.75));
-    label.style.fontSize = `${settings.textSize}px`;
+    label.style.borderColor = colorWithAlpha(annotation.color, 0.45);
 
-    const input = document.createElement('textarea');
+    const input = document.createElement('input');
+    input.type = 'text';
     input.value = annotation.text;
-    input.rows = annotation.text.split('\n').length || 1;
-    input.style.backgroundColor = colorWithAlpha(fillColor, Math.max(settings.boxOpacity - 0.08, 0.05));
-    input.style.fontSize = `${settings.textSize}px`;
-    input.addEventListener('input', (e) => {
-      autoResizeTextarea(e.target);
-      updateText(annotation.id, e.target.value);
-    });
-    autoResizeTextarea(input);
+    input.style.backgroundColor = colorWithAlpha(annotation.color, 0.08);
+    input.addEventListener('input', (e) => updateText(annotation.id, e.target.value));
 
     const flip = document.createElement('button');
     flip.title = 'Flip direction';
@@ -266,59 +212,6 @@ function handleOverlayClick(event) {
   addAnnotation(x, y);
 }
 
-function updateControlDisplay() {
-  borderValue.textContent = `${settings.borderThickness}px`;
-  lineValue.textContent = `${settings.lineThickness}px`;
-  textSizeValue.textContent = `${settings.textSize}px`;
-  opacityValue.textContent = `${Math.round(settings.boxOpacity * 100)}%`;
-}
-
-function wireControls() {
-  borderSlider.addEventListener('input', (event) => {
-    settings.borderThickness = parseFloat(event.target.value);
-    updateControlDisplay();
-    renderAnnotations();
-  });
-
-  lineSlider.addEventListener('input', (event) => {
-    settings.lineThickness = parseFloat(event.target.value);
-    updateControlDisplay();
-    renderAnnotations();
-  });
-
-  textSizeSlider.addEventListener('input', (event) => {
-    settings.textSize = parseInt(event.target.value, 10);
-    updateControlDisplay();
-    renderAnnotations();
-  });
-
-  opacitySlider.addEventListener('input', (event) => {
-    settings.boxOpacity = parseFloat(event.target.value);
-    updateControlDisplay();
-    renderAnnotations();
-  });
-
-  colorPickerPrimary.addEventListener('input', (event) => {
-    settings.markerColor = event.target.value;
-    annotationSets.forEach((set) => {
-      set.forEach((annotation) => {
-        annotation.color = settings.markerColor;
-      });
-    });
-    renderAnnotations();
-  });
-
-  colorPickerSecondary.addEventListener('input', (event) => {
-    settings.fillColor = event.target.value;
-    annotationSets.forEach((set) => {
-      set.forEach((annotation) => {
-        annotation.fillColor = settings.fillColor;
-      });
-    });
-    renderAnnotations();
-  });
-}
-
 function init() {
   buildImageList();
   setActiveImage(0);
@@ -326,8 +219,6 @@ function init() {
   overlay.addEventListener('click', handleOverlayClick);
   window.addEventListener('resize', renderAnnotations);
   clearButton.addEventListener('click', clearAnnotations);
-  wireControls();
-  updateControlDisplay();
 }
 
 window.addEventListener('DOMContentLoaded', init);
