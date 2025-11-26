@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Annotator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Photo toolkit</p>
+      <h1>Quick image annotator</h1>
+      <p class="lede">Pick an image and click anywhere to drop a labeled marker. Each annotation pairs a bold circle with a crisp line and matching note.</p>
+    </div>
+    <button id="clearButton" class="ghost">Clear annotations</button>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Select an image</h2>
+      <div id="imageList" class="image-list"></div>
+      <p class="tip">Click directly on the photo to add an annotation. The line flips upward or downward automatically so notes stay tidy.</p>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-header">
+        <div>
+          <p class="label">Active image</p>
+          <h3 id="activeTitle"></h3>
+        </div>
+        <div class="pill">Live annotate</div>
+      </div>
+
+      <section class="controls" aria-label="Annotation style controls">
+        <div class="control-group">
+          <label for="borderSlider">Marker border</label>
+          <div class="control-input">
+            <input id="borderSlider" type="range" min="1" max="6" step="0.5" value="2.5">
+            <span id="borderValue" class="control-value">2.5px</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="lineSlider">Line thickness</label>
+          <div class="control-input">
+            <input id="lineSlider" type="range" min="1" max="6" step="0.5" value="2">
+            <span id="lineValue" class="control-value">2px</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="textSizeSlider">Text size</label>
+          <div class="control-input">
+            <input id="textSizeSlider" type="range" min="12" max="22" step="1" value="14">
+            <span id="textSizeValue" class="control-value">14px</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="textColorPicker">Text color</label>
+          <div class="control-input">
+            <input id="textColorPicker" type="color" value="#e5e7eb">
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="opacitySlider">Text box opacity</label>
+          <div class="control-input">
+            <input id="opacitySlider" type="range" min="0.05" max="0.65" step="0.01" value="0.22">
+            <span id="opacityValue" class="control-value">22%</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Text emphasis</label>
+          <div class="control-input control-toggles">
+            <label class="toggle">
+              <input id="boldToggle" type="checkbox">
+              <span>B</span>
+            </label>
+            <label class="toggle">
+              <input id="italicToggle" type="checkbox">
+              <span>I</span>
+            </label>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="colorPickerPrimary">Marker color</label>
+          <div class="control-input">
+            <input id="colorPickerPrimary" type="color" value="#38bdf8">
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="colorPickerSecondary">Text box tint</label>
+          <div class="control-input">
+            <input id="colorPickerSecondary" type="color" value="#a855f7">
+          </div>
+        </div>
+      </section>
+
+      <div class="image-frame">
+        <img id="mainImage" alt="Selected" />
+        <div id="overlay" class="overlay" aria-label="Annotation layer"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
