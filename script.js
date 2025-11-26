@@ -17,8 +17,11 @@ const lineSlider = document.getElementById('lineSlider');
 const lineValue = document.getElementById('lineValue');
 const textSizeSlider = document.getElementById('textSizeSlider');
 const textSizeValue = document.getElementById('textSizeValue');
+const textColorPicker = document.getElementById('textColorPicker');
 const opacitySlider = document.getElementById('opacitySlider');
 const opacityValue = document.getElementById('opacityValue');
+const boldToggle = document.getElementById('boldToggle');
+const italicToggle = document.getElementById('italicToggle');
 const colorPickerPrimary = document.getElementById('colorPickerPrimary');
 const colorPickerSecondary = document.getElementById('colorPickerSecondary');
 
@@ -48,6 +51,9 @@ const settings = {
   borderThickness: 2.5,
   lineThickness: 2,
   textSize: 14,
+  textColor: '#e5e7eb',
+  isBold: false,
+  isItalic: false,
   boxOpacity: 0.22,
   markerColor: '#38bdf8',
   fillColor: '#a855f7',
@@ -82,6 +88,7 @@ function getCurrentAnnotations() {
         id: makeId(),
         color: settings.markerColor,
         fillColor: settings.fillColor,
+        editing: false,
         ...item,
       })),
     );
@@ -137,6 +144,7 @@ function addAnnotation(x, y) {
     text: 'Annotation',
     color: settings.markerColor,
     fillColor: settings.fillColor,
+    editing: true,
   });
   renderAnnotations();
 }
@@ -208,41 +216,65 @@ function renderAnnotations() {
     const label = document.createElement('div');
     label.className = `label-chip ${annotation.direction}`;
     label.style.left = `${xPx}px`;
-    label.style.color = annotation.color;
+    label.style.color = settings.textColor;
     label.style.background = bgTint;
     label.style.borderColor = colorWithAlpha(fillColor, Math.min(settings.boxOpacity + 0.15, 0.75));
     label.style.fontSize = `${settings.textSize}px`;
+    label.style.fontWeight = settings.isBold ? '700' : '500';
+    label.style.fontStyle = settings.isItalic ? 'italic' : 'normal';
+    label.dataset.id = annotation.id;
 
-    const input = document.createElement('textarea');
-    input.value = annotation.text;
-    input.rows = annotation.text.split('\n').length || 1;
-    input.style.backgroundColor = colorWithAlpha(fillColor, Math.max(settings.boxOpacity - 0.08, 0.05));
-    input.style.fontSize = `${settings.textSize}px`;
-    input.addEventListener('input', (e) => {
-      autoResizeTextarea(e.target);
-      updateText(annotation.id, e.target.value);
-    });
-    autoResizeTextarea(input);
+    label.addEventListener('click', () => setEditing(annotation.id, true));
 
-    const flip = document.createElement('button');
-    flip.title = 'Flip direction';
-    flip.textContent = '⇅';
-    flip.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleDirection(annotation.id);
-    });
+    const handleFocusOut = (event) => {
+      if (!label.contains(event.relatedTarget)) {
+        setEditing(annotation.id, false);
+      }
+    };
 
-    const remove = document.createElement('button');
-    remove.title = 'Remove annotation';
-    remove.textContent = '✕';
-    remove.addEventListener('click', (e) => {
-      e.stopPropagation();
-      removeAnnotation(annotation.id);
-    });
+    if (annotation.editing) {
+      label.classList.add('editing');
+      const input = document.createElement('textarea');
+      input.value = annotation.text;
+      input.rows = annotation.text.split('\n').length || 1;
+      input.style.backgroundColor = colorWithAlpha(fillColor, Math.max(settings.boxOpacity - 0.08, 0.05));
+      input.style.fontSize = `${settings.textSize}px`;
+      input.style.color = settings.textColor;
+      input.addEventListener('input', (e) => {
+        autoResizeTextarea(e.target);
+        updateText(annotation.id, e.target.value);
+      });
+      input.addEventListener('focusout', handleFocusOut);
+      autoResizeTextarea(input);
 
-    label.appendChild(input);
-    label.appendChild(flip);
-    label.appendChild(remove);
+      const flip = document.createElement('button');
+      flip.title = 'Flip direction';
+      flip.textContent = '⇅';
+      flip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDirection(annotation.id);
+      });
+
+      const remove = document.createElement('button');
+      remove.title = 'Remove annotation';
+      remove.textContent = '✕';
+      remove.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeAnnotation(annotation.id);
+      });
+
+      label.appendChild(input);
+      label.appendChild(flip);
+      label.appendChild(remove);
+    } else {
+      label.classList.add('view');
+      const text = document.createElement('div');
+      text.className = 'label-text';
+      text.textContent = annotation.text;
+      text.tabIndex = 0;
+      text.addEventListener('focusout', handleFocusOut);
+      label.appendChild(text);
+    }
 
     if (annotation.direction === 'down') {
       line.style.top = `${yPx + dotRadius}px`;
@@ -266,11 +298,32 @@ function handleOverlayClick(event) {
   addAnnotation(x, y);
 }
 
+function setEditing(id, editing) {
+  const annotations = getCurrentAnnotations();
+  const target = annotations.find((item) => item.id === id);
+  if (target) {
+    target.editing = editing;
+    renderAnnotations();
+    if (editing) {
+      requestAnimationFrame(() => {
+        const activeLabel = overlay.querySelector(`[data-id="${id}"] textarea`);
+        if (activeLabel) {
+          activeLabel.focus();
+          activeLabel.setSelectionRange(activeLabel.value.length, activeLabel.value.length);
+        }
+      });
+    }
+  }
+}
+
 function updateControlDisplay() {
   borderValue.textContent = `${settings.borderThickness}px`;
   lineValue.textContent = `${settings.lineThickness}px`;
   textSizeValue.textContent = `${settings.textSize}px`;
   opacityValue.textContent = `${Math.round(settings.boxOpacity * 100)}%`;
+  boldToggle.checked = settings.isBold;
+  italicToggle.checked = settings.isItalic;
+  textColorPicker.value = settings.textColor;
 }
 
 function wireControls() {
@@ -289,6 +342,11 @@ function wireControls() {
   textSizeSlider.addEventListener('input', (event) => {
     settings.textSize = parseInt(event.target.value, 10);
     updateControlDisplay();
+    renderAnnotations();
+  });
+
+  textColorPicker.addEventListener('input', (event) => {
+    settings.textColor = event.target.value;
     renderAnnotations();
   });
 
@@ -315,6 +373,16 @@ function wireControls() {
         annotation.fillColor = settings.fillColor;
       });
     });
+    renderAnnotations();
+  });
+
+  boldToggle.addEventListener('change', (event) => {
+    settings.isBold = event.target.checked;
+    renderAnnotations();
+  });
+
+  italicToggle.addEventListener('change', (event) => {
+    settings.isItalic = event.target.checked;
     renderAnnotations();
   });
 }
