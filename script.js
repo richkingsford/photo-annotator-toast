@@ -35,7 +35,7 @@ const defaultAnnotations = new Map([
         x: 0.34,
         y: 0.42,
         direction: 'up',
-        text: 'Modern Frameless Wall Mirror – 24x36 inch\n$129.99\nBrightHome Interiors',
+        text: 'Modern Frameless Wall Mirror – 24x36 inch\n$129.99\n\nBrightHome Interiors',
       },
       {
         x: 0.69,
