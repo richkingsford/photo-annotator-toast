@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Annotator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Photo toolkit</p>
+      <h1>Quick image annotator</h1>
+      <p class="lede">Pick an image and click anywhere to drop a labeled marker. Each annotation pairs a bold circle with a crisp line and matching note.</p>
+    </div>
+    <button id="clearButton" class="ghost">Clear annotations</button>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Select an image</h2>
+      <div id="imageList" class="image-list"></div>
+      <p class="tip">Click directly on the photo to add an annotation. The line flips upward or downward automatically so notes stay tidy.</p>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-header">
+        <div>
+          <p class="label">Active image</p>
+          <h3 id="activeTitle"></h3>
+        </div>
+        <div class="pill">Live annotate</div>
+      </div>
+      <div class="image-frame">
+        <img id="mainImage" alt="Selected" />
+        <div id="overlay" class="overlay" aria-label="Annotation layer"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
